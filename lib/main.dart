@@ -79,17 +79,23 @@ class Scene {
 
 class Novel {
   int totalWordCount;
+  int sceneWordCount;
   List<Scene> scenes;
-  Novel({this.totalWordCount = 50000, List<Scene>? scenes})
-      : scenes = scenes ?? [];
+  Novel({
+    this.totalWordCount = 50000,
+    this.sceneWordCount = 2500,
+    List<Scene>? scenes,
+  }) : scenes = scenes ?? [];
 
   Map<String, dynamic> toJson() => {
         'totalWordCount': totalWordCount,
+        'sceneWordCount': sceneWordCount,
         'scenes': scenes.map((s) => s.toJson()).toList(),
       };
 
   static Novel fromJson(Map<String, dynamic> json) => Novel(
         totalWordCount: json['totalWordCount'] as int? ?? 50000,
+        sceneWordCount: json['sceneWordCount'] as int? ?? 2500,
         scenes: (json['scenes'] as List<dynamic>? ?? [])
             .map((e) => Scene.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -242,7 +248,48 @@ class _NovelEditorState extends State<NovelEditor> {
                   _save();
                 }
               },
-              icon: const Icon(Icons.numbers))
+              icon: const Icon(Icons.numbers)),
+          IconButton(
+              onPressed: () async {
+                final controller = TextEditingController(
+                    text: novel!.sceneWordCount.toString());
+                final res = await showDialog<int>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Words per scene'),
+                        content: TextField(
+                          controller: controller,
+                          keyboardType: TextInputType.number,
+                        ),
+                        actions: [
+                          TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel')),
+                          TextButton(
+                              onPressed: () => Navigator.pop(
+                                  context, int.tryParse(controller.text)),
+                              child: const Text('OK')),
+                        ],
+                      );
+                    });
+                if (res != null && res > 0) {
+                  novel!.sceneWordCount = res;
+                  final count =
+                      (novel!.totalWordCount / res).ceil();
+                  novel!.scenes = List.generate(count, (i) {
+                    final wc = i == count - 1
+                        ? novel!.totalWordCount - res * (count - 1)
+                        : res;
+                    return Scene(
+                        id:
+                            '${DateTime.now().millisecondsSinceEpoch}-$i',
+                        wordCount: wc);
+                  });
+                  _save();
+                }
+              },
+              icon: const Icon(Icons.playlist_add))
         ],
       ),
       body: ReorderableListView.builder(
@@ -342,7 +389,8 @@ class _NovelEditorState extends State<NovelEditor> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           novel!.scenes.add(Scene(
-              id: DateTime.now().millisecondsSinceEpoch.toString()));
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              wordCount: novel!.sceneWordCount));
           _save();
         },
         child: const Icon(Icons.add),

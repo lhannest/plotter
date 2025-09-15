@@ -4,6 +4,7 @@ A Flutter app for organizing a novel into scenes and story structure sections.
 
 ## Features
 - Set overall word count for the novel.
+- Specify words per scene and auto-generate scenes for the entire novel.
 - Add, edit, delete and reorder scenes.
 - Scenes are automatically classified into structural sections:
   - Setup (0% - 12%) – Readers learn about your characters, their goals, and the stakes.
